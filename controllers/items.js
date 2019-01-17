@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const async = require('async');
-const https = require('https');
+const https = require('follow-redirects').https;
 const http = require('http');
 const url = require('url');
 const parseString = require('xml2js').parseString;
@@ -107,6 +107,7 @@ module.exports = new Router()
     const hasNumber = /\d/;
    
     if(isNumeric(req.params.id)){
+
 		proxy.getHttps('https://pokeapi.co/api/v2/pokemon/'+req.params.id, (err, resp) =>{
 			if(err) return res.status(500).send(err);
 			if(resp.status != 200) return res.status(resp.status).send(err);
