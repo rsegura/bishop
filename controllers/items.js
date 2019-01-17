@@ -4,62 +4,20 @@ const https = require('follow-redirects').https;
 const http = require('http');
 const url = require('url');
 const parseString = require('xml2js').parseString;
-var httpProxy;
 
-//http://www.clashapi.xyz/api/cards/{id}
-//https://pokeapi.co/api/v2/pokemon/{id}
-//http://ergast.com/api/f1/drivers/{id}
+
 function isNumeric(num){
   return !isNaN(num)
 }
 
-function getHttpProxy(){
-	if(httpProxy){
-		return httpProxy;
-	}
-	httpProxy = {
-		getHttps : function(url, callback) {
-            let data = "";
-
-            var request = https.get(url, function(response) {
-            	let statusCode= response.statusCode
-                response.on('data', function(chunk) {
-                    data += chunk;
-                });
-                response.on('end', function() {
-                    callback(null, {status: statusCode, data:data});
-                });
-			});
-
-            request.on('error', function(error) {
-                callback(error);
-            });
-        },
-        getHttp : function(url, callback) {
-            let data = "";
-
-            var request = http.get(url, function(response) {
-            	let statusCode= response.statusCode
-                response.on('data', function(chunk) {
-                    data += chunk;
-                });
-                response.on('end', function() {
-                    callback(null, {status: statusCode, data:data});
-                });
-			});
-
-            request.on('error', function(error) {
-                callback(error);
-            });
-         }
-	}
-	return httpProxy;
-}
-
-module.exports = new Router()
-  .get('/', (req, res) => {
-  	var proxy = getHttpProxy();
-  	let result =[]
+const router = new Router()
+module.exports = function(proxy){
+	router.use(function timeLog (req, res, next) {
+	  console.log('Time: ', Date.now())
+	  next()
+	})
+	router.get('/', (req, res) => {
+	let result =[]
     async.parallel([
 	    function(callback) {
 	    	proxy.getHttp('http://www.clashapi.xyz/api/cards', (err, resp) =>{
@@ -97,13 +55,11 @@ module.exports = new Router()
 	    }
 	],
 	function(err, results) {
+		if(err) return res.status(500).send(err);
 		res.status(200).send(result);
 	});
-    
-  })
-  .get('/:id', (req, res) => {
+  }).get('/:id', (req, res) => {
     // Code here
-    const proxy = getHttpProxy();
     const hasNumber = /\d/;
    
     if(isNumeric(req.params.id)){
@@ -140,3 +96,6 @@ module.exports = new Router()
     }
     
   });
+
+  return router;
+}
