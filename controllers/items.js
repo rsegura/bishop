@@ -1,9 +1,8 @@
 const { Router } = require('express');
 const async = require('async');
-const https = require('follow-redirects').https;
-const http = require('http');
-const url = require('url');
-const parseString = require('xml2js').parseString;
+const pokeapi = require('./pokeapi');
+const clashapi = require('./clashapi');
+const ergastapi = require('./ergastapi');
 
 
 function isNumeric(num){
@@ -16,83 +15,37 @@ module.exports = function(proxy){
 	  console.log('Time: ', Date.now())
 	  next()
 	})
-	router.get('/', (req, res) => {
-	let result =[]
-    async.parallel([
-	    function(callback) {
-	    	proxy.getHttp('http://www.clashapi.xyz/api/cards', (err, resp) =>{
-	    		if(err) return callback(err);
-	    		JSON.parse(resp.data).forEach((element)=>{
-			  		result.push({"id": element._id, "name":element.name});
-			  	})
-			  	callback(null, null);
-	    	});
-	    	
-	        
-	    },
-	    function(callback) {
-	    	proxy.getHttps('https://pokeapi.co/api/v2/pokemon/', (err, resp) =>{
-	    		if(err) return callback(err);
-	    		JSON.parse(resp.data).results.forEach((element) =>{
-	    			result.push({"id": url.parse(element.url).pathname.split("/")[4], "name": element.name});
-	    		})
-	    		callback(null, null);
-	    	});
-	        
-	    },
-	    function(callback){
-	    	proxy.getHttp('http://ergast.com/api/f1/drivers?limit=847', (err, resp) =>{
-	    		if(err) return callback(err);
-	    		parseString(resp.data, function(err, res){
-	    			if(err) return callback(err);
-	    			res.MRData.DriverTable[0].Driver.forEach((element) =>{
-	    				result.push({"id":element.$.driverId, "name":element.GivenName[0]});
-	    			})
-	    			callback(null, null);
-	    		})
-	    		
-	    	})
-	    }
-	],
-	function(err, results) {
-		if(err) return res.status(500).send(err);
-		res.status(200).send(result);
-	});
-  }).get('/:id', (req, res) => {
-    // Code here
+	router.get('/', (req, res) =>{
+		async.parallel([
+			pokeapi.getAll(proxy), 
+			clashapi.getAll(proxy),
+			ergastapi.getAll(proxy)], function(err, result){
+				if(err) return res.status(500).send(err);
+				res.status(200).send(result[0].concat(result[1]).concat(result[2])); 
+			})
+		
+	})
+	.get('/:id', (req, res) => {
     const hasNumber = /\d/;
    
     if(isNumeric(req.params.id)){
-
-		proxy.getHttps('https://pokeapi.co/api/v2/pokemon/'+req.params.id, (err, resp) =>{
-			if(err) return res.status(500).send(err);
-			if(resp.status != 200) return res.status(resp.status).send(err);
-			let result = JSON.parse(resp.data);
-			return res.status(200).send({"id":result.id, "name":result.name, "image": result.sprites.front_default});
-			   
-		});
+    	pokeapi.get(proxy, req.params.id, (err, resp) =>{
+    		if(err) return res.status(500).send(err);
+    		return res.status(resp.status).send(resp.body);
+    	})
     }
     else if (hasNumber.test(req.params.id)){
-    	proxy.getHttp('http://www.clashapi.xyz/api/cards/'+req.params.id, (err, resp) =>{
-			if(err) return res.status(500).send(err);
-			if(resp.status != 200) return res.status(resp.status).send(err);
-			let result = JSON.parse(resp.data);
-			return res.status(200).send({"id":result._id, "image":"/images/cards/"+result.idName+".png", "name":result.name});
-			   
-		});
+    	clashapi.get(proxy, req.params.id, (err, resp) =>{
+    		if(err) return res.status(500).send(err);
+    		return res.status(resp.status).send(resp.body);
+    	})
     }
     else{
-    	proxy.getHttp('http://ergast.com/api/f1/drivers/'+req.params.id, (err, resp) =>{
-			if(err) return res.status(500).send({err:err, resp:resp});
-	    	parseString(resp.data, function(err, result){
-	    		if(result.MRData.$.total == 0) return res.status(404).send(result);
-	    		return res.status(200).send({"id":result.MRData.DriverTable[0].$.driverId, 
-	    			"name":result.MRData.DriverTable[0].Driver[0].GivenName[0],
-	    		    "image":result.MRData.DriverTable[0].Driver[0].$.url});
 
-	    	})
-			   
-		});
+    	ergastapi.get(proxy, req.params.id, (err, resp) =>{
+    		if(err) return res.status(500).send(err);
+    		return res.status(resp.status).send(resp.body);
+    	})
     }
     
   });
