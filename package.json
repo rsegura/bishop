@@ -18,10 +18,10 @@
     "interview"
   ],
   "license": "MIT",
-  "main": "index.js",
+  "main": "server.js",
   "name": "bishop",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon server.js"
   },
   "version": "1.0.0"
 }
