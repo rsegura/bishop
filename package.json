@@ -10,6 +10,9 @@
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.2.1",
+    "mocha": "^5.2.0",
     "nodemon": ">=1.18.9"
   },
   "keywords": [
@@ -21,7 +24,8 @@
   "main": "server.js",
   "name": "bishop",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "test" : "mocha test/*.js --timeout 15000"
   },
   "version": "1.0.0"
 }
