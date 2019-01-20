@@ -33,6 +33,8 @@ can fork the project.
 Then, you need to install all the packages `npm install`. If you want to
 start, you can run the application with `npm start`.
 
+
+
 ## Exercise
 
 Create an endpoint called `items`. This endpoint shall group all the information 
@@ -89,3 +91,7 @@ As our `drivers` API doesn't have any images, we are going to display in
 ## Optional
 - Use some cache system
 - Use some reverse id system
+
+## Test
+
+Added test to prove endpoints. To execute, run `npm test`
